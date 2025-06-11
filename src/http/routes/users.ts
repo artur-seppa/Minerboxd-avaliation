@@ -1,0 +1,55 @@
+import { FastifyInstance } from 'fastify';
+import { z } from "zod";
+import { findActivityUserById } from '../application/useCases/findActivityUserById.js';
+
+export async function userRoutes(fastify: FastifyInstance) {
+    fastify.get<{ Params: { userId: string } }>(
+        '/users/:userId/activity',
+        async (request, reply) => {
+            try {
+                const parseResult = FindPagesInput.safeParse(request.query);
+                if (!parseResult.success) {
+                    return reply.status(400).send({
+                        error: "Invalid input",
+                        details: parseResult.error.issues
+                    });
+                }
+
+                const { page, pageSize } = parseResult.data;
+                const { userId } = request.params;
+
+                const validUserId = z.string()
+                    .regex(/^\d+$/, "Must contain only digits")
+                    .refine((val) => parseInt(val) > 0, "Must be a positive number")
+                    .parse(userId);
+
+                const result = await findActivityUserById({
+                    userId: validUserId,
+                    pagination: { page, pageSize }
+                });
+
+                if (!result.success) {
+                    if (result.error.code === "NOT_FOUND") {
+                        return reply.status(404).send({ error: result.error.message });
+                    }
+                    return reply.status(500).send({ error: result.error.message });
+                }
+
+                return reply.status(200).send(result.data);
+            } catch (error) {
+                if (error instanceof z.ZodError) {
+                    return reply.status(400).send({
+                        error: "Invalid input",
+                        details: error.issues
+                    });
+                }
+                return reply.status(500).send({ error: "Internal server error" });
+            }
+        }
+    );
+}
+
+const FindPagesInput = z.object({
+    page: z.number().int().positive().default(1),
+    pageSize: z.number().int().positive().default(100)
+});

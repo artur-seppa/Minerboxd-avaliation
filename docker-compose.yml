@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  db:
+    container_name: minderboxd-ts-postgres
+    image: postgres
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
