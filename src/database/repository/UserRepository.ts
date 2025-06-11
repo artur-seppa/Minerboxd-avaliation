@@ -22,16 +22,10 @@ export const UserRepository = {
       pageSize: number
     }) {
     try {
-      // const userActivities = await UserActivity.query()
-      //   .where('userId', userId)
-      //   .orderBy('createdAt', 'desc')
-      //   .page(pagination.page - 1, pagination.pageSize);
-
       const userActivities = await UserActivity.query()
         .where('userId', userId)
         .orderBy('createdAt', 'desc')
-        .page(pagination.page - 1, pagination.pageSize)
-        .withGraphFetched('[user, movie]');
+        .page(pagination.page - 1, pagination.pageSize);
 
       return Result.succeed(userActivities);
     } catch (error) {

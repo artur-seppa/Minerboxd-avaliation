@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { z } from "zod";
-import { findActivityUserById } from '../application/useCases/findActivityUserById.js';
+import { findUserActivities } from '../application/queries/findUserActivities.js';
+import { UserActivitySerializer } from '../serializers/userActivitySerializer.js';
+import { UserRepository } from '../../database/repository/UserRepository.js';
 
 export async function userRoutes(fastify: FastifyInstance) {
     fastify.get<{ Params: { userId: string } }>(
@@ -21,10 +23,19 @@ export async function userRoutes(fastify: FastifyInstance) {
                 const validUserId = z.string()
                     .regex(/^\d+$/, "Must contain only digits")
                     .refine((val) => parseInt(val) > 0, "Must be a positive number")
+                    .transform((val) => parseInt(val))
                     .parse(userId);
 
-                const result = await findActivityUserById({
-                    userId: validUserId,
+                const resultFindUser = await UserRepository.findById(validUserId);
+                if (!resultFindUser.success) {
+                    if (resultFindUser.error.code === "NOT_FOUND") {
+                        return reply.status(404).send({ error: resultFindUser.error.message });
+                    }
+                    return reply.status(500).send({ error: resultFindUser.error.message });
+                }
+
+                const result = await findUserActivities({
+                    user_id: validUserId,
                     pagination: { page, pageSize }
                 });
 
@@ -35,7 +46,10 @@ export async function userRoutes(fastify: FastifyInstance) {
                     return reply.status(500).send({ error: result.error.message });
                 }
 
-                return reply.status(200).send(result.data);
+                const userActivities = result.data;
+                const serializedList = UserActivitySerializer.serializeList(userActivities.results);
+
+                return reply.status(200).send(serializedList);
             } catch (error) {
                 if (error instanceof z.ZodError) {
                     return reply.status(400).send({

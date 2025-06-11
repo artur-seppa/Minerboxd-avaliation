@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "tsx --watch src/index.ts",
+    "dev": "tsx watch --clear-screen=false src/index.ts",
     "dev:db:create": "createdbjs minerboxd_development --user=postgres --password=postgres --host=127.0.0.1",
     "dev:db:migrate": "npm run knex migrate:latest",
     "dev:db:rollback": "npm run knex migrate:rollback",
