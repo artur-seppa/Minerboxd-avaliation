@@ -4,6 +4,8 @@ import { z } from "zod";
 import Movie from '../../database/models/Movie.js';
 import { MovieSerializer } from '../serializers/movieSerializer.js';
 import { addMovieWatchList } from '../application/useCases/addMovieWatchList.js';
+import { ActivityAction } from '../../database/models/UserActivity.js';
+import { notifySubscribers } from '../application/useCases/notifySubscribers.js';
 
 export function watchlistRoutes(fastify: FastifyInstance) {
   fastify.get(
@@ -56,7 +58,9 @@ export function watchlistRoutes(fastify: FastifyInstance) {
         return reply.status(500).send({ error: result.error.message });
       }
 
-      const movie = result.data;
+      const movie = result.data as Movie;
+
+      notifySubscribers({ userId, movie, action: ActivityAction.ADD_MOVIE_TO_WATCHLIST });
 
       return reply.status(201).send({ success: result.success, message: "movie placed on watch list" });
     },
@@ -79,6 +83,14 @@ export function watchlistRoutes(fastify: FastifyInstance) {
         .user!.$relatedQuery('watchlist')
         .unrelate()
         .where('movieId', movie.id);
+
+      const userId = request.user?.id;
+      if (!userId) {
+        return reply.status(400).send({ error: "Invalid user id" });
+      }
+
+      notifySubscribers({ userId, movie, action: ActivityAction.REMOVE_MOVIE_FROM_WATCHLIST });
+
       return reply.send();
     },
   );

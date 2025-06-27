@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "tsx watch --clear-screen=false src/index.ts",
+    "dev:bullmq:start": "npx tsx src/bullmq/worker.ts",
     "dev:db:create": "createdbjs minerboxd_development --user=postgres --password=postgres --host=127.0.0.1",
     "dev:db:migrate": "npm run knex migrate:latest",
     "dev:db:rollback": "npm run knex migrate:rollback",
@@ -23,8 +24,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@bull-board/api": "^6.10.1",
+    "@bull-board/fastify": "^6.10.1",
     "@fastify/jwt": "^9.0.2",
     "bcrypt": "^5.1.1",
+    "bullmq": "^5.56.0",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.0",
     "knex": "^3.1.0",

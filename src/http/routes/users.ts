@@ -3,8 +3,11 @@ import { z } from "zod";
 import { findUserActivities } from '../application/queries/findUserActivities.js';
 import { UserActivitySerializer } from '../serializers/userActivitySerializer.js';
 import { UserActivityRssSerializer } from '../serializers/userActivityRssSerializer.js';
-import { UserRepository } from '../../database/repository/UserRepository.js';
 import { findUserById } from '../application/useCases/findUserById.js';
+import { ActivityAction } from '../../database/models/Subscriber.js';
+import { addSubscription } from '../application/useCases/addSubscription.js';
+import { jwt } from '../hooks/jwt.js';
+import { notifySubscribers } from '../application/useCases/notifySubscribers.js';
 
 export async function userRoutes(fastify: FastifyInstance) {
     fastify.get<{ Params: { userId: string } }>(
@@ -119,6 +122,52 @@ export async function userRoutes(fastify: FastifyInstance) {
             }
         }
     );
+
+    fastify.post<{ Params: { target: string } }>(
+        '/users/:target/subscribe',
+        {
+            onRequest: jwt,
+        },
+        async (request, reply) => {
+            try {
+                const parseResult = SubscribeInput.safeParse(request.body);
+                if (!parseResult.success) {
+                    return reply.status(400).send({
+                        error: "Invalid input",
+                        details: parseResult.error.issues
+                    });
+                }
+
+                const { action } = parseResult.data;
+                const { target } = request.params;
+                const user_id = request.user?.id;
+
+                const validUserId = z.coerce.number()
+                    .int()
+                    .positive("Must be a positive number")
+                    .parse(target);
+
+                const resultSubscriber = await addSubscription({ user_id: user_id!, target: validUserId, action });
+                
+                if (!resultSubscriber.success) {
+                    if (resultSubscriber.error.code === "NOT_FOUND") {
+                        return reply.status(404).send({ error: resultSubscriber.error.message });
+                    }
+                    return reply.status(500).send({ error: resultSubscriber.error.message });
+                }
+
+                return reply.status(200).send({ success: resultSubscriber.success, message: `Você está inscrito nas atividades de ${action} do usuário ${resultSubscriber.data.targetUser.email}` });
+            } catch (error) {
+                if (error instanceof z.ZodError) {
+                    return reply.status(400).send({
+                        error: "Invalid input",
+                        details: error.issues
+                    });
+                }
+                return reply.status(500).send({ error: "Internal server error" });
+            }
+        }
+    );
 }
 
 const FindPagesInput = z.object({
@@ -132,4 +181,8 @@ const FindPagesInput = z.object({
         .refine((val) => parseInt(val) > 0, "Must be a positive number")
         .transform((val) => parseInt(val))
         .default("100"),
+});
+
+const SubscribeInput = z.object({
+    action: z.nativeEnum(ActivityAction),
 });
