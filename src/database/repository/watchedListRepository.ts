@@ -7,7 +7,7 @@ export const WatchedListRepository = {
     async addMovie(user: User, movie: Movie) {
         try {
             const result = await Movie.transaction(async (trx) => {
-                const movieResult = await user.$relatedQuery('watchedlist', trx).relate(movie.id);
+                await user.$relatedQuery('watchedlist', trx).relate(movie.id);
 
                 await UserActivity.query(trx).insert({
                     userId: user.id,
@@ -15,7 +15,7 @@ export const WatchedListRepository = {
                     action: ActivityAction.ADD_MOVIE_TO_WATCHEDLIST
                 });
 
-                return movieResult;
+                return movie;
             });
 
             return Result.succeed(result);

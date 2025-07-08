@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import Movie from './Movie.js';
 import BaseModel from './BaseModel.js';
 import UserActivity from './UserActivity.js';
+import { subscribe } from 'diagnostics_channel';
 
 export default class User extends BaseModel {
   static tableName = 'users';
@@ -44,6 +45,22 @@ export default class User extends BaseModel {
         join: {
           from: 'users.id',
           to: 'user_activities.userId'
+        }
+      },
+      subscribe_target: {
+        relation: BaseModel.HasManyRelation,
+        modelClass: UserActivity,
+        join: {
+          from: 'users.id',
+          to: 'subscribes.target'
+        }
+      },
+      subscribe_subscriber: {
+        relation: BaseModel.HasManyRelation,
+        modelClass: UserActivity,
+        join: {
+          from: 'users.id',
+          to: 'subscribes.subscriber'
         }
       }
     }
