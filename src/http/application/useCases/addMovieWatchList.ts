@@ -7,7 +7,7 @@ import { UserRepository } from '../../../database/repository/UserRepository.js';
 type AddMovieWatchList = (input: {
     userId: number,
     movieId: string;
-}) => Promise<Result<Movie>>;
+}) => Promise<Result>;
 
 export const addMovieWatchList: AddMovieWatchList = async (input) => {
     const { userId, movieId } = input;

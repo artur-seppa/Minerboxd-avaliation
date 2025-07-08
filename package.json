@@ -11,7 +11,7 @@
     "dev:db:migrate": "npm run knex migrate:latest",
     "dev:db:rollback": "npm run knex migrate:rollback",
     "dev:db:seed": "npm run knex seed:run",
-    "test": "NODE_ENV=test node --import=tsx ./tests/runTests.ts",
+    "test": "vitest run",
     "test:db:create": "createdbjs minerboxd_test --user=postgres --password=postgres --host=127.0.0.1",
     "test:db:migrate": "NODE_ENV=test npm run knex migrate:latest",
     "test:db:rollback": "NODE_ENV=test npm run knex migrate:rollback",
